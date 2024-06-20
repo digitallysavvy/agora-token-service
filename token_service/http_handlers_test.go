@@ -1,4 +1,4 @@
-package service
+package token_service
 
 // Add these imports if they are not already present
 import (
@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-func CreateTestService(t *testing.T) *Service {
+func CreateTestTokenService(t *testing.T) *TokenService {
 	appIdEnv, appIDExists := os.LookupEnv("APP_ID")
 	appCertEnv, appCertExists := os.LookupEnv("APP_CERTIFICATE")
 	if !appIDExists || !appCertExists {
 		t.Errorf("check appId or appCertificate")
 	}
-	return &Service{
+	return &TokenService{
 		appID:          appIdEnv,
 		appCertificate: appCertEnv,
 	}
@@ -20,7 +20,7 @@ func CreateTestService(t *testing.T) *Service {
 
 // TestGenRtcToken tests the GenRtcToken function.
 func TestGenRtcToken(t *testing.T) {
-	service := CreateTestService(t)
+	tokenService := CreateTestTokenService(t)
 
 	// Test valid RTC token generation
 	tokenReq := TokenRequest{
@@ -31,7 +31,7 @@ func TestGenRtcToken(t *testing.T) {
 		ExpirationSeconds: 3600,
 	}
 
-	token, err := service.GenRtcToken(tokenReq)
+	token, err := tokenService.GenRtcToken(tokenReq)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestGenRtcToken(t *testing.T) {
 		RtcRole:   "subscriber",
 	}
 
-	_, err = service.GenRtcToken(validWithoutExpiration)
+	_, err = tokenService.GenRtcToken(validWithoutExpiration)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestGenRtcToken(t *testing.T) {
 		ExpirationSeconds: 3600,
 	}
 
-	_, err = service.GenRtcToken(invalidTokenReq)
+	_, err = tokenService.GenRtcToken(invalidTokenReq)
 	if err == nil {
 		t.Error("Expected error, but got nil")
 	}
@@ -73,7 +73,7 @@ func TestGenRtcToken(t *testing.T) {
 		RtcRole:   "subscriber",
 	}
 
-	_, err = service.GenRtcToken(invalidTokenReq2)
+	_, err = tokenService.GenRtcToken(invalidTokenReq2)
 	if err == nil {
 		t.Error("Expected error, but got nil")
 	}
@@ -81,7 +81,7 @@ func TestGenRtcToken(t *testing.T) {
 
 // TestGenRtmToken tests the genRtmToken function.
 func TestGenRtmToken(t *testing.T) {
-	service := CreateTestService(t)
+	tokenService := CreateTestTokenService(t)
 
 	// Test valid RTM token generation
 	tokenReq := TokenRequest{
@@ -90,7 +90,7 @@ func TestGenRtmToken(t *testing.T) {
 		ExpirationSeconds: 3600,
 	}
 
-	token, err := service.GenRtmToken(tokenReq)
+	token, err := tokenService.GenRtmToken(tokenReq)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestGenRtmToken(t *testing.T) {
 		Channel:   "test_channel",
 	}
 
-	token, err = service.GenRtmToken(tokenChannelReq)
+	token, err = tokenService.GenRtmToken(tokenChannelReq)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestGenRtmToken(t *testing.T) {
 		ExpirationSeconds: 3600,
 	}
 
-	_, err = service.GenRtmToken(invalidTokenReq)
+	_, err = tokenService.GenRtmToken(invalidTokenReq)
 	if err == nil {
 		t.Error("Expected error, but got nil")
 	}
@@ -133,7 +133,7 @@ func TestGenRtmToken(t *testing.T) {
 
 // TestGenChatToken tests the genChatToken function.
 func TestGenChatToken(t *testing.T) {
-	service := CreateTestService(t)
+	service := CreateTestTokenService(t)
 
 	// Test valid chat token generation (chat app token)
 	tokenReqApp := TokenRequest{

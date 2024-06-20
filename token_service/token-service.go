@@ -1,4 +1,4 @@
-package service
+package token_service
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Service represents the main application service.
-type Service struct {
+// TokenService represents the main application TokenService.
+type TokenService struct {
 	// Server is the HTTP server for the application.
 	Server *http.Server
 
@@ -31,8 +31,8 @@ type Service struct {
 	allowOrigin string
 }
 
-// Stop service safely, closing additional connections if needed.
-func (s *Service) Stop() {
+// Stop TokenService safely, closing additional connections if needed.
+func (s *TokenService) Stop() {
 	// Will continue once an interrupt has occurred
 	signal.Notify(s.Sigint, os.Interrupt)
 	<-s.Sigint
@@ -47,16 +47,16 @@ func (s *Service) Stop() {
 	}
 }
 
-// Start runs the service by listening to the specified port
-func (s *Service) Start() {
+// Start runs the TokenService by listening to the specified port
+func (s *TokenService) Start() {
 	log.Println("Listening to port " + s.Server.Addr)
 	if err := s.Server.ListenAndServe(); err != nil {
 		panic(err)
 	}
 }
 
-// NewService returns a Service pointer with all configurations set
-func NewService() *Service {
+// NewTokenService returns a TokenService pointer with all configurations set
+func NewTokenService() *TokenService {
 
 	err := godotenv.Load()
 	if err != nil {
@@ -80,7 +80,7 @@ func NewService() *Service {
 		}
 	}
 
-	s := &Service{
+	s := &TokenService{
 		Sigint: make(chan os.Signal, 1),
 		Server: &http.Server{
 			Addr: fmt.Sprintf(":%s", serverPort),
@@ -94,12 +94,6 @@ func NewService() *Service {
 
 	api.Use(s.nocache())
 	api.Use(s.CORSMiddleware())
-	api.GET("rtc/:channelName/:role/:tokenType/:rtcuid/", s.getRtcToken)
-	api.GET("rtm/:rtmuid/", s.getRtmToken)
-	api.GET("rte/:channelName/:role/:tokenType/:rtcuid/", s.getRtcRtmToken)
-	api.GET("rte/:channelName/:role/:tokenType/:rtcuid/:rtmuid/", s.getRtcRtmToken)
-	api.GET("chat/app/", s.getChatToken)             // Chat token for API calls
-	api.GET("chat/account/:chatid/", s.getChatToken) // Chat token for SDK calls
 	api.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",

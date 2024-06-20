@@ -1,4 +1,4 @@
-package service
+package token_service
 
 import (
 	"encoding/json"
@@ -41,8 +41,8 @@ type TokenRequest struct {
 //
 // Example usage:
 //
-//	router.GET("/getToken", service.getToken)
-func (s *Service) getToken(c *gin.Context) {
+//	router.GET("/getToken", TokenService.getToken)
+func (s *TokenService) getToken(c *gin.Context) {
 	s.GetToken(c.Writer, c.Request)
 }
 
@@ -62,13 +62,13 @@ func (s *Service) getToken(c *gin.Context) {
 //     - Default: Calls the RtcToken method to generate the RTC token and sends it as a JSON response.
 //
 // Notes:
-//   - The actual token generation methods (RtmToken, ChatToken, and RtcToken) are part of the Service struct.
+//   - The actual token generation methods (RtmToken, ChatToken, and RtcToken) are part of the TokenService struct.
 //   - The generated token is sent as a JSON response with appropriate HTTP status codes.
 //
 // Example usage:
 //
-//	router.GET("/getToken", service.GetToken)
-func (s *Service) GetToken(w http.ResponseWriter, r *http.Request) {
+//	router.GET("/getToken", TokenService.GetToken)
+func (s *TokenService) GetToken(w http.ResponseWriter, r *http.Request) {
 	var tokenReq TokenRequest
 	// Parse the request body into a TokenRequest struct
 	err := json.NewDecoder(r.Body).Decode(&tokenReq)
@@ -133,8 +133,8 @@ func (s *Service) GetToken(w http.ResponseWriter, r *http.Request) {
 //	    Role:       "publisher",
 //	    ExpirationSeconds: 3600,
 //	}
-//	token, err := service.GenRtcToken(tokenReq)
-func (s *Service) GenRtcToken(tokenRequest TokenRequest) (string, error) {
+//	token, err := TokenService.GenRtcToken(tokenReq)
+func (s *TokenService) GenRtcToken(tokenRequest TokenRequest) (string, error) {
 	if tokenRequest.Channel == "" {
 		return "", errors.New("invalid: missing channel name")
 	}
@@ -192,8 +192,8 @@ func (s *Service) GenRtcToken(tokenRequest TokenRequest) (string, error) {
 //	    Uid:        "user123",
 //	    ExpirationSeconds: 3600,
 //	}
-//	token, err := service.GenRtmToken(tokenReq)
-func (s *Service) GenRtmToken(tokenRequest TokenRequest) (string, error) {
+//	token, err := TokenService.GenRtmToken(tokenReq)
+func (s *TokenService) GenRtmToken(tokenRequest TokenRequest) (string, error) {
 	if tokenRequest.Uid == "" {
 		return "", errors.New("invalid: missing user ID or account")
 	}
@@ -234,7 +234,7 @@ func (s *Service) GenRtmToken(tokenRequest TokenRequest) (string, error) {
 //	    TokenType:  "chat",
 //	    ExpirationSeconds: 3600,
 //	}
-//	token, err := service.GenChatToken(tokenReq)
+//	token, err := TokenService.GenChatToken(tokenReq)
 //
 //	// Generate a chat user token
 //	tokenReq := TokenRequest{
@@ -242,8 +242,8 @@ func (s *Service) GenRtmToken(tokenRequest TokenRequest) (string, error) {
 //	    Uid:        "user123",
 //	    ExpirationSeconds: 3600,
 //	}
-//	token, err := service.GenChatToken(tokenReq)
-func (s *Service) GenChatToken(tokenRequest TokenRequest) (string, error) {
+//	token, err := TokenService.GenChatToken(tokenReq)
+func (s *TokenService) GenChatToken(tokenRequest TokenRequest) (string, error) {
 	if tokenRequest.ExpirationSeconds == 0 {
 		tokenRequest.ExpirationSeconds = 3600
 	}
