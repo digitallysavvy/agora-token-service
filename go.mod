@@ -1,4 +1,4 @@
-module github.com/AgoraIO-Community/agora-token-service
+module github.com/AgoraIO-Community/agora-backend-service
 
 go 1.19
 

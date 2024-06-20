@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/AgoraIO-Community/agora-token-service/service"
+	"github.com/AgoraIO-Community/agora-backend-service/token_service"
 )
 
 func main() {
-	s := service.NewService()
+	s := token_service.NewTokenService()
 	// Stop is called on another thread, but waits for an interrupt
 	go s.Stop()
 	s.Start()
