@@ -1,4 +1,4 @@
-package token_service
+package middleware
 
 import (
 	"net/http"
@@ -7,7 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *TokenService) nocache() gin.HandlerFunc {
+type Middleware struct {
+	AllowOrigin string
+}
+
+func NewMiddleware(allowOrigin string) *Middleware {
+	return &Middleware{AllowOrigin: allowOrigin}
+}
+
+func (m *Middleware) NoCache() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// set headers
 		c.Header("Cache-Control", "private, no-cache, no-store, must-revalidate")
@@ -17,10 +25,10 @@ func (s *TokenService) nocache() gin.HandlerFunc {
 }
 
 // Add CORSMiddleware to handle CORS requests and set the necessary headers
-func (s *TokenService) CORSMiddleware() gin.HandlerFunc {
+func (m *Middleware) CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.Request.Header.Get("Origin")
-		if !s.isOriginAllowed(origin) {
+		if !m.isOriginAllowed(origin) {
 			c.Header("Content-Type", "application/json")
 			c.JSON(http.StatusForbidden, gin.H{
 				"error": "Origin not allowed",
@@ -39,12 +47,12 @@ func (s *TokenService) CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-func (s *TokenService) isOriginAllowed(origin string) bool {
-	if s.allowOrigin == "*" {
+func (m *Middleware) isOriginAllowed(origin string) bool {
+	if m.AllowOrigin == "*" {
 		return true
 	}
 
-	allowedOrigins := strings.Split(s.allowOrigin, ",")
+	allowedOrigins := strings.Split(m.AllowOrigin, ",")
 	for _, allowed := range allowedOrigins {
 		if origin == allowed {
 			return true

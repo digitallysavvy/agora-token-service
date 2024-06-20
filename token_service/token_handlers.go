@@ -1,3 +1,5 @@
+/** token_handlers.go */
+
 package token_service
 
 import (
@@ -25,7 +27,7 @@ type TokenRequest struct {
 	ExpirationSeconds int    `json:"expire,omitempty"`  // The token expiration time in seconds (used for all token types)
 }
 
-// getToken is a helper function that acts as a proxy to the GetToken method.
+// GetToken is a helper function that acts as a proxy to the GetToken method.
 // It forwards the HTTP response writer and request from the provided *gin.Context
 // to the GetToken method for token generation and response sending.
 //
@@ -41,12 +43,12 @@ type TokenRequest struct {
 //
 // Example usage:
 //
-//	router.GET("/getToken", TokenService.getToken)
-func (s *TokenService) getToken(c *gin.Context) {
-	s.GetToken(c.Writer, c.Request)
+//	router.POST("/getNew", TokenService.GetToken)
+func (s *TokenService) GetToken(c *gin.Context) {
+	s.HandleGetToken(c.Writer, c.Request)
 }
 
-// getToken handles the HTTP request to generate a token based on the provided tokenType.
+// HandleGetToken handles the HTTP request to generate a token based on the provided tokenType.
 // It checks the tokenType from the query parameters and calls the appropriate token generation method.
 // The generated token is sent as a JSON response to the client.
 //
@@ -57,18 +59,19 @@ func (s *TokenService) getToken(c *gin.Context) {
 // Behavior:
 //  1. Retrieves the tokenType from the query parameters. Error if invalid entry or not provided.
 //  2. Uses a switch statement to handle different tokenType cases:
-//     - "rtm": Calls the RtmToken method to generate the RTM token and sends it as a JSON response.
-//     - "chat": Calls the ChatToken method to generate the chat token and sends it as a JSON response.
-//     - Default: Calls the RtcToken method to generate the RTC token and sends it as a JSON response.
+//     - "rtc": Calls the GenRtcToken method to generate the RTC token and sends it as a JSON response.
+//     - "rtm": Calls the GenRtmToken method to generate the RTM token and sends it as a JSON response.
+//     - "chat": Calls the GenChatToken method to generate the chat token and sends it as a JSON response.
+//     - Default: Returns an error response indicating an unsupported token type.
 //
 // Notes:
-//   - The actual token generation methods (RtmToken, ChatToken, and RtcToken) are part of the TokenService struct.
+//   - The actual token generation methods (GenRtcToken, GenRtmToken, and GenChatToken) are part of the TokenService struct.
 //   - The generated token is sent as a JSON response with appropriate HTTP status codes.
 //
 // Example usage:
 //
-//	router.GET("/getToken", TokenService.GetToken)
-func (s *TokenService) GetToken(w http.ResponseWriter, r *http.Request) {
+//	router.POST("/getNew", TokenService.GetToken)
+func (s *TokenService) HandleGetToken(w http.ResponseWriter, r *http.Request) {
 	var tokenReq TokenRequest
 	// Parse the request body into a TokenRequest struct
 	err := json.NewDecoder(r.Body).Decode(&tokenReq)
@@ -130,7 +133,7 @@ func (s *TokenService) GetToken(w http.ResponseWriter, r *http.Request) {
 //	    TokenType:  "rtc",
 //	    Channel:    "my_channel",
 //	    Uid:        "user123",
-//	    Role:       "publisher",
+//	    RtcRole:    "publisher",
 //	    ExpirationSeconds: 3600,
 //	}
 //	token, err := TokenService.GenRtcToken(tokenReq)
