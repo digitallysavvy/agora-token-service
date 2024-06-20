@@ -1,20 +1,15 @@
-# Agora Token Webservice
+# Agora Backend Webservice
+A fork of the [AgoraIO Community Token Service](https://github.com/AgoraIO-Community/agora-token-service/), that adds support for Cloud Recording, Real-Time Transcription, and Media Services.
 
-<p align="center">
-  <img src="https://github.com/AgoraIO-Community/agora-token-service/workflows/Go/badge.svg?branch=main">
-  <img src="https://github.com/AgoraIO-Community/agora-token-service/actions/workflows/dockerimage.yml/badge.svg?branch=main">
-  <a href="https://github.com/AgoraIO-Community/agora-token-service/releases/latest"><img src="https://github.com/AgoraIO-Community/agora-token-service/actions/workflows/release.yml/badge.svg?release=latest"></a>
-</p>
+Written in Golang, using [Gin framework](https://github.com/gin-gonic/gin). A RESTful webservice for interacting with [Agora.io](https://www.agora.io). 
 
-Written in Golang, using [Gin framework](https://github.com/gin-gonic/gin) to create a RESTful webservice for generating user tokens for use with the [Agora.io](https://www.agora.io) platform. 
-
-Agora Advanced Guide: [Token Management](https://docs.agora.io/en/video-calling/develop/authentication-workflow).
+<!-- Agora Advanced Guide: [Token Management](https://docs.agora.io/en/video-calling/develop/authentication-workflow). -->
 
 ## One-Click Deployments
 
-| Railway | Render | Heroku |
+<!-- | Railway | Render | Heroku |
 |:-:|:-:|:-:|
-| [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/NKYzQA?referralCode=waRWUT) | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/AgoraIO-Community/agora-token-service) | [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy/?template=https://github.com/AgoraIO-Community/agora-token-service) |
+| [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/NKYzQA?referralCode=waRWUT) | [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/AgoraIO-Community/agora-token-service) | [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy/?template=https://github.com/AgoraIO-Community/agora-token-service) | -->
 
 ## How to Run ##
 
