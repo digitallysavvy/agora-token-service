@@ -1,5 +1,5 @@
 # Agora Backend Webservice
-A fork of the [AgoraIO Community Token Service](https://github.com/AgoraIO-Community/agora-token-service/), that adds support for Cloud Recording, Real-Time Transcription, and Media Services.
+This project is a fork of the [AgoraIO Community Token Service](https://github.com/AgoraIO-Community/agora-token-service/), that adds support for Cloud Recording, Real-Time Transcription, and Media Services.
 
 Written in Golang, using [Gin framework](https://github.com/gin-gonic/gin). A RESTful webservice for interacting with [Agora.io](https://www.agora.io). 
 
@@ -165,78 +165,6 @@ curl -X POST -H "Content-Type: application/json" -d '{
 ```
 
 ---
-
-## Deprecated Methods
-The following methods are deprecated but still operational. While they continue to work for backward compatibility, it is advised to refrain from using them in new implementations due to potential future removal or replacement with more efficient alternatives.
-
-
-### RTC Token ###
-The `rtc` token endpoint requires a `tokenType` (uid || userAccount), `channelName`, and the user's `uid` (type varies based on `tokenType`). 
-`expiry(optional)` Pass an integer to represent the token lifetime in seconds.
-
-**endpoint structure** 
-```
-/rtc/:channelName/:role/:tokenType/:rtcuid/?expiry=3600
-```
-
-response:
-``` json
-{"rtcToken":"007rtc-token-djfkaljdla"} 
-```
-
-### RTM Token ###
-
-The `rtm` token endpoint requires the user's `rtmuid`. 
-`expiry(optional)` Pass an integer to represent the privelege lifetime in seconds.
-**endpoint structure** 
-```
-/rtm/:rtmuid/?expiry=3600
-```
-
-response:
-``` json
-{"rtmToken":"007rtm-token-djfkaljdla"} 
-```
-
-### RTM + RTC Tokens ###
-The `rte` token endpoint generates both the `rtc` and `rtm` tokens with a single request. This endpoint requires a `tokenType` (uid || userAccount), `channelName`, the user's `rtcuid` (type varies `String/Int` based on `tokenType`) and `rtmuid` which is a `String`. Omitting `rtmuid` will assume it's the same as `rtcuid`.
-`expiry(optional)` Pass an integer to represent the token lifetime in seconds.
-
-**endpoint structure** 
-```
-/rte/:channelName/:role/:tokenType/:rtcuid/:rtmuid/?expiry=3600
-```
-
-response:
-``` json
-{
-  "rtcToken":"007rtc-token-djfkaljdla",
-  "rtmToken":"007rtm-token-djfkaljdla" 
-} 
-```
-
-### Chat Tokens ###
-
-#### endpoint structure ####
-
-app privileges:
-```
-chat/app/?expiry=3600
-```
-
-user privileges:
-```
-/chat/account/:chatid/?expiry=3600
-```
-
-`expiry` is an optional parameter for both.
-
-response:
-``` json
-{
-  "chatToken":"007chat-token-djfkaljdla"
-} 
-```
 
 ## Contributions
 
