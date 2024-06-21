@@ -13,7 +13,6 @@ import (
 	"github.com/AgoraIO-Community/agora-backend-service/token_service"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	// "github.com/AgoraIO-Community/agora-backend-service/another_service"
 )
 
 func main() {
@@ -29,12 +28,11 @@ func main() {
 	// Create instances of your services
 	tokenService := token_service.NewTokenService()
 	cloudRecordingService := cloud_recording_service.NewCloudRecordingService(tokenService)
-	// anotherService := another_service.NewAnotherService()
 
 	// Register routes for each service
 	tokenService.RegisterRoutes(r)
 	cloudRecordingService.RegisterRoutes(r)
-	// anotherService.RegisterRoutes(r)
+	r.GET("/ping", Ping)
 
 	// Get the server port from environment variables or use a default
 	serverPort, exists := os.LookupEnv("SERVER_PORT")
@@ -70,4 +68,21 @@ func main() {
 	}
 
 	log.Println("Server exiting")
+}
+
+// Ping is a simple handler for the /ping route.
+// It responds with a "pong" message to indicate that the service is running.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Sends a JSON response with a "pong" message.
+//
+// Notes:
+//   - This function is useful for health checks and ensuring that the service is up and running.
+func Ping(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"message": "pong",
+	})
 }

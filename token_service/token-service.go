@@ -72,23 +72,5 @@ func (s *TokenService) RegisterRoutes(r *gin.Engine) {
 	api := r.Group("/token")
 	api.Use(s.middleware.NoCache())
 	api.Use(s.middleware.CORSMiddleware())
-	api.GET("/ping", s.Ping)
 	api.POST("/getNew", s.GetToken)
-}
-
-// Ping is a simple handler for the /ping route.
-// It responds with a "pong" message to indicate that the service is running.
-//
-// Parameters:
-//   - c: *gin.Context - The Gin context representing the HTTP request and response.
-//
-// Behavior:
-//   - Sends a JSON response with a "pong" message.
-//
-// Notes:
-//   - This function is useful for health checks and ensuring that the service is up and running.
-func (s *TokenService) Ping(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "pong",
-	})
 }

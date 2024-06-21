@@ -114,8 +114,7 @@ func (s *CloudRecordingService) RegisterRoutes(r *gin.Engine) {
 	api.Use(s.middleware.NoCache())
 	api.Use(s.middleware.CORSMiddleware())
 	// routes to functions
-	api.GET("/ping", s.Ping)
-	api.POST("/acquireResource", s.AcquireResource)
+	// api.POST("/acquireResource", s.AcquireResource)
 	api.POST("/startRecording", s.StartRecording)
 	api.POST("/stopRecording", s.StopRecording)
 	api.GET("/getStatus", s.GetStatus)
@@ -123,23 +122,6 @@ func (s *CloudRecordingService) RegisterRoutes(r *gin.Engine) {
 	updateAPI := api.Group("/update")
 	updateAPI.POST("/subscriber-list", s.UpdateSubscriptionList)
 	updateAPI.POST("/layout", s.UpdateLayout)
-}
-
-// Ping is a simple handler for the /ping route.
-// It responds with a "pong" message to indicate that the service is running.
-//
-// Parameters:
-//   - c: *gin.Context - The Gin context representing the HTTP request and response.
-//
-// Behavior:
-//   - Sends a JSON response with a "pong" message.
-//
-// Notes:
-//   - This function is useful for health checks and ensuring that the service is up and running.
-func (s *CloudRecordingService) Ping(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "pong",
-	})
 }
 
 func (s *CloudRecordingService) AcquireResource(c *gin.Context) {
