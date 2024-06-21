@@ -27,25 +27,34 @@ type TokenRequest struct {
 	ExpirationSeconds int    `json:"expire,omitempty"`  // The token expiration time in seconds (used for all token types)
 }
 
-// GetToken is a helper function that acts as a proxy to the GetToken method.
+// GetToken is a helper function that acts as a proxy to the HandleGetToken method.
 // It forwards the HTTP response writer and request from the provided *gin.Context
-// to the GetToken method for token generation and response sending.
+// to the HandleGetToken method for token generation and response sending.
 //
 // Parameters:
 //   - c: *gin.Context - The Gin context representing the HTTP request and response.
 //
 // Behavior:
-//   - Forwards the HTTP response writer and request to the GetToken method.
+//   - Forwards the HTTP response writer and request to the HandleGetToken method.
 //
 // Notes:
-//   - This function acts as an intermediary to invoke the GetToken method.
-//   - It allows token generation and response sending through a common proxy function.
+//   - This function acts as an intermediary to invoke the HandleGetToken method.
+//   - It handles validating the request before sending invoking token generation and response writer through a common proxy function.
 //
 // Example usage:
 //
 //	router.POST("/getNew", TokenService.GetToken)
 func (s *TokenService) GetToken(c *gin.Context) {
-	s.HandleGetToken(c.Writer, c.Request)
+	var req = c.Request
+	var respWriter = c.Writer
+	var tokenReq TokenRequest
+	// Parse the request body into a TokenRequest struct
+	err := json.NewDecoder(req.Body).Decode(&tokenReq)
+	if err != nil {
+		http.Error(respWriter, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.HandleGetToken(tokenReq, respWriter)
 }
 
 // HandleGetToken handles the HTTP request to generate a token based on the provided tokenType.
@@ -71,14 +80,7 @@ func (s *TokenService) GetToken(c *gin.Context) {
 // Example usage:
 //
 //	router.POST("/getNew", TokenService.GetToken)
-func (s *TokenService) HandleGetToken(w http.ResponseWriter, r *http.Request) {
-	var tokenReq TokenRequest
-	// Parse the request body into a TokenRequest struct
-	err := json.NewDecoder(r.Body).Decode(&tokenReq)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func (s *TokenService) HandleGetToken(tokenReq TokenRequest, w http.ResponseWriter) {
 
 	var token string
 	var tokenErr error
