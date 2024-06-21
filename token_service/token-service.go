@@ -10,28 +10,30 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// TokenService represents the main application TokenService.
+// TokenService represents the main application token service.
+// It holds the necessary configurations and dependencies for managing tokens.
 type TokenService struct {
-	// Server is the HTTP server for the application.
-	Server *http.Server
-
-	// Sigint is a channel to handle OS signals, such as Ctrl+C.
-	Sigint chan os.Signal
-
-	// appID is the identifier for the application.
-	appID string
-
-	// appCertificate is the certificate used by the application.
-	appCertificate string
-
-	// allowOrigin specifies the allowed origin for Cross-Origin Resource Sharing (CORS).
-	allowOrigin string
-
-	// middleware holds the CORS and NoCache configurations for the application
-	middleware *middleware.Middleware
+	Server         *http.Server           // The HTTP server for the application
+	Sigint         chan os.Signal         // Channel to handle OS signals, such as Ctrl+C
+	appID          string                 // The Agora app ID
+	appCertificate string                 // The Agora app certificate
+	allowOrigin    string                 // The allowed origin for CORS
+	middleware     *middleware.Middleware // Middleware for handling requests
 }
 
 // NewTokenService returns a TokenService pointer with all configurations set.
+// It loads environment variables, validates their presence, and initializes the TokenService struct.
+//
+// Returns:
+//   - *TokenService: The initialized TokenService struct.
+//
+// Behavior:
+//   - Loads environment variables from the .env file.
+//   - Retrieves and validates necessary environment variables.
+//   - Initializes and returns a TokenService struct with the loaded configurations.
+//
+// Notes:
+//   - Logs a fatal error and exits if any required environment variables are missing.
 func NewTokenService() *TokenService {
 	err := godotenv.Load()
 	if err != nil {
@@ -54,6 +56,18 @@ func NewTokenService() *TokenService {
 }
 
 // RegisterRoutes registers the routes for the TokenService.
+// It sets up the API endpoints and applies necessary middleware for request handling.
+//
+// Parameters:
+//   - r: *gin.Engine - The Gin engine instance to register the routes with.
+//
+// Behavior:
+//   - Creates an API group for token routes.
+//   - Applies middleware for NoCache and CORS.
+//   - Registers routes for ping and getNew token.
+//
+// Notes:
+//   - This function organizes the API routes and ensures that requests are handled with appropriate middleware.
 func (s *TokenService) RegisterRoutes(r *gin.Engine) {
 	api := r.Group("/token")
 	api.Use(s.middleware.NoCache())
@@ -63,6 +77,16 @@ func (s *TokenService) RegisterRoutes(r *gin.Engine) {
 }
 
 // Ping is a simple handler for the /ping route.
+// It responds with a "pong" message to indicate that the service is running.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Sends a JSON response with a "pong" message.
+//
+// Notes:
+//   - This function is useful for health checks and ensuring that the service is up and running.
 func (s *TokenService) Ping(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "pong",

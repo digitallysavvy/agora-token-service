@@ -11,18 +11,34 @@ import (
 )
 
 // CloudRecordingService represents the cloud recording service.
+// It holds the necessary configurations and dependencies for managing cloud recordings.
 type CloudRecordingService struct {
-	appID               string
-	appCertificate      string
-	customerID          string
-	customerCertificate string
-	allowOrigin         string
-	middleware          *middleware.Middleware
-	tokenService        *token_service.TokenService
-	baseURL            string
+	appID               string                      // The Agora app ID
+	appCertificate      string                      // The Agora app certificate
+	customerID          string                      // The customer ID for authentication
+	customerCertificate string                      // The customer certificate for authentication
+	allowOrigin         string                      // The allowed origin for CORS
+	middleware          *middleware.Middleware      // Middleware for handling requests
+	tokenService        *token_service.TokenService // Token service for generating tokens
+	baseURL             string                      // The base URL for the Agora cloud recording API
 }
 
 // NewCloudRecordingService returns a CloudRecordingService pointer with all configurations set.
+// It loads environment variables, validates their presence, and initializes the CloudRecordingService struct.
+//
+// Parameters:
+//   - tokenService: *token_service.TokenService - The token service for generating tokens.
+//
+// Returns:
+//   - *CloudRecordingService: The initialized CloudRecordingService struct.
+//
+// Behavior:
+//   - Loads environment variables from the .env file.
+//   - Retrieves and validates necessary environment variables.
+//   - Initializes and returns a CloudRecordingService struct with the loaded configurations.
+//
+// Notes:
+//   - Logs a fatal error and exits if any required environment variables are missing.
 func NewCloudRecordingService(tokenService *token_service.TokenService) *CloudRecordingService {
 	err := godotenv.Load()
 	if err != nil {
@@ -52,6 +68,18 @@ func NewCloudRecordingService(tokenService *token_service.TokenService) *CloudRe
 }
 
 // RegisterRoutes registers the routes for the CloudRecordingService.
+// It sets up the API endpoints and applies necessary middleware for request handling.
+//
+// Parameters:
+//   - r: *gin.Engine - The Gin engine instance to register the routes with.
+//
+// Behavior:
+//   - Creates an API group for cloud recording routes.
+//   - Applies middleware for NoCache and CORS.
+//   - Registers routes for ping, acquireResource, startRecording, stopRecording, getStatus, update subscriber list, and update layout.
+//
+// Notes:
+//   - This function organizes the API routes and ensures that requests are handled with appropriate middleware.
 func (s *CloudRecordingService) RegisterRoutes(r *gin.Engine) {
 	api := r.Group("/cloud_recording")
 	api.Use(s.middleware.NoCache())
@@ -68,6 +96,16 @@ func (s *CloudRecordingService) RegisterRoutes(r *gin.Engine) {
 }
 
 // Ping is a simple handler for the /ping route.
+// It responds with a "pong" message to indicate that the service is running.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Sends a JSON response with a "pong" message.
+//
+// Notes:
+//   - This function is useful for health checks and ensuring that the service is up and running.
 func (s *CloudRecordingService) Ping(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"message": "pong",

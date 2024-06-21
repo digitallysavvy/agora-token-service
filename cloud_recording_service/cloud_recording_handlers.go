@@ -12,36 +12,59 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AcquireResourceRequest represents the JSON payload structure for acquiring a cloud recording resource.
+// It contains the channel name and UID necessary for resource acquisition.
 type AcquireResourceRequest struct {
-	Cname string `json:"cname"`
-	Uid   string `json:"uid"`
+	Cname string `json:"cname"` // The channel name for the cloud recording
+	Uid   string `json:"uid"`   // The UID for the cloud recording session
 }
 
+// StartRecordingRequest represents the JSON payload structure for starting a cloud recording.
+// It includes the channel name, UID, and the client request configuration.
 type StartRecordingRequest struct {
-	Cname         string          `json:"cname"`
-	Uid           string          `json:"uid"`
-	ClientRequest ClientRequest   `json:"clientRequest"`
+	Cname         string        `json:"cname"`         // The channel name for the cloud recording
+	Uid           string        `json:"uid"`           // The UID for the cloud recording session
+	ClientRequest ClientRequest `json:"clientRequest"` // The client request configuration for the cloud recording
 }
 
+// ClientRequest represents the client request configuration for starting or updating a cloud recording.
+// It includes the token, storage configuration, and recording configuration.
 type ClientRequest struct {
-	Token           string           `json:"token,omitempty"`
-	StorageConfig   StorageConfig    `json:"storageConfig,omitempty"`
-	RecordingConfig RecordingConfig  `json:"recordingConfig,omitempty"`
+	Token           string          `json:"token,omitempty"`          // The token for the cloud recording session
+	StorageConfig   StorageConfig   `json:"storageConfig,omitempty"`  // The storage configuration for the cloud recording
+	RecordingConfig RecordingConfig `json:"recordingConfig,omitempty"`// The recording configuration for the cloud recording
 }
 
+// StorageConfig represents the storage configuration for cloud recording.
+// It includes the secret key, vendor, region, bucket, and access key for storage.
 type StorageConfig struct {
-	SecretKey  string `json:"secretKey"`
-	Vendor     int    `json:"vendor"`
-	Region     int    `json:"region"`
-	Bucket     string `json:"bucket"`
-	AccessKey  string `json:"accessKey"`
+	SecretKey  string `json:"secretKey"` // The secret key for storage authentication
+	Vendor     int    `json:"vendor"`    // The storage vendor identifier
+	Region     int    `json:"region"`    // The storage region identifier
+	Bucket     string `json:"bucket"`    // The storage bucket name
+	AccessKey  string `json:"accessKey"` // The access key for storage authentication
 }
 
+// RecordingConfig represents the recording configuration for cloud recording.
+// It includes the channel type for the recording session.
 type RecordingConfig struct {
-	ChannelType int `json:"channelType"`
+	ChannelType int `json:"channelType"` // The channel type for the cloud recording
 }
 
 // AcquireResource handles the acquire resource request.
+// It validates the request, constructs the URL, and sends the request to the Agora cloud recording API.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Parses the request body into an AcquireResourceRequest struct.
+//   - Validates the request fields.
+//   - Constructs the URL and authentication header for the API request.
+//   - Sends the request to the Agora cloud recording API and returns the response.
+//
+// Notes:
+//   - This function assumes the presence of s.baseURL, s.appID, s.customerID, and s.customerCertificate for constructing the API request.
 func (s *CloudRecordingService) AcquireResource(c *gin.Context) {
 	var req AcquireResourceRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -68,6 +91,20 @@ func (s *CloudRecordingService) AcquireResource(c *gin.Context) {
 }
 
 // StartRecording handles the start recording request.
+// It validates the request, generates a token, constructs the URL, and sends the request to the Agora cloud recording API.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Parses the request body into a StartRecordingRequest struct.
+//   - Validates the request fields.
+//   - Generates a token using the token_service.
+//   - Constructs the URL and authentication header for the API request.
+//   - Sends the request to the Agora cloud recording API and returns the response.
+//
+// Notes:
+//   - This function assumes the presence of s.baseURL, s.appID, s.customerID, s.customerCertificate, and s.tokenService for constructing the API request and generating the token.
 func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 	var req StartRecordingRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -110,6 +147,19 @@ func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 }
 
 // StopRecording handles the stop recording request.
+// It validates the request, constructs the URL, and sends the request to the Agora cloud recording API.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Parses the request body into a StartRecordingRequest struct.
+//   - Validates the request fields.
+//   - Constructs the URL and authentication header for the API request.
+//   - Sends the request to the Agora cloud recording API and returns the response.
+//
+// Notes:
+//   - This function assumes the presence of s.baseURL, s.appID, s.customerID, and s.customerCertificate for constructing the API request.
 func (s *CloudRecordingService) StopRecording(c *gin.Context) {
 	var req StartRecordingRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -140,6 +190,18 @@ func (s *CloudRecordingService) StopRecording(c *gin.Context) {
 }
 
 // GetStatus handles the get status request.
+// It constructs the URL and sends the request to the Agora cloud recording API.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Retrieves the resource ID, SID, and mode from the URL parameters.
+//   - Constructs the URL and authentication header for the API request.
+//   - Sends the request to the Agora cloud recording API and returns the response.
+//
+// Notes:
+//   - This function assumes the presence of s.baseURL, s.appID, s.customerID, and s.customerCertificate for constructing the API request.
 func (s *CloudRecordingService) GetStatus(c *gin.Context) {
 	resourceID := c.Param("resourceid")
 	sid := c.Param("sid")
@@ -158,6 +220,19 @@ func (s *CloudRecordingService) GetStatus(c *gin.Context) {
 }
 
 // UpdateSubscriptionList handles the update subscription list request.
+// It validates the request, constructs the URL, and sends the request to the Agora cloud recording API.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Parses the request body into a StartRecordingRequest struct.
+//   - Validates the request fields.
+//   - Constructs the URL and authentication header for the API request.
+//   - Sends the request to the Agora cloud recording API and returns the response.
+//
+// Notes:
+//   - This function assumes the presence of s.baseURL, s.appID, s.customerID, and s.customerCertificate for constructing the API request.
 func (s *CloudRecordingService) UpdateSubscriptionList(c *gin.Context) {
 	var req StartRecordingRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -187,6 +262,19 @@ func (s *CloudRecordingService) UpdateSubscriptionList(c *gin.Context) {
 }
 
 // UpdateLayout handles the update video layout request.
+// It validates the request, constructs the URL, and sends the request to the Agora cloud recording API.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Parses the request body into a StartRecordingRequest struct.
+//   - Validates the request fields.
+//   - Constructs the URL and authentication header for the API request.
+//   - Sends the request to the Agora cloud recording API and returns the response.
+//
+// Notes:
+//   - This function assumes the presence of s.baseURL, s.appID, s.customerID, and s.customerCertificate for constructing the API request.
 func (s *CloudRecordingService) UpdateLayout(c *gin.Context) {
 	var req StartRecordingRequest
 	if err := c.BindJSON(&req); err != nil {
@@ -216,6 +304,22 @@ func (s *CloudRecordingService) UpdateLayout(c *gin.Context) {
 }
 
 // makeRequest is a helper function to make HTTP requests with basic authentication.
+//
+// Parameters:
+//   - method: string - The HTTP method to use for the request (e.g., "GET", "POST").
+//   - url: string - The URL to send the request to.
+//   - auth: string - The base64-encoded authorization header value.
+//   - body: []byte - The request body to send (can be nil for GET requests).
+//
+// Returns:
+//   - []byte: The response body from the server.
+//   - error: An error if there are any issues during the request.
+//
+// Behavior:
+//   - Creates a new HTTP request with the specified method, URL, and body.
+//   - Sets the Authorization and Content-Type headers.
+//   - Sends the request using an HTTP client.
+//   - Reads and returns the response body, or an error if the request fails.
 func makeRequest(method, url, auth string, body []byte) ([]byte, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
