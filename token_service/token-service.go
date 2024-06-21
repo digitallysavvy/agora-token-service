@@ -1,6 +1,7 @@
 package token_service
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +20,19 @@ type TokenService struct {
 	appCertificate string                 // The Agora app certificate
 	allowOrigin    string                 // The allowed origin for CORS
 	middleware     *middleware.Middleware // Middleware for handling requests
+}
+
+// TokenRequest is a struct representing the JSON payload structure for token generation requests.
+// It contains fields necessary for generating different types of tokens (RTC, RTM, or chat) based on the "TokenType".
+// The "Channel", "RtcRole", "Uid", and "ExpirationSeconds" fields are used for specific token types.
+//
+// TokenType options: "rtc" for RTC token, "rtm" for RTM token, and "chat" for chat token.
+type TokenRequest struct {
+	TokenType         string `json:"tokenType"`         // The token type: "rtc", "rtm", or "chat"
+	Channel           string `json:"channel,omitempty"` // The channel name (used for RTC and RTM tokens)
+	RtcRole           string `json:"role,omitempty"`    // The role of the user for RTC tokens (publisher or subscriber)
+	Uid               string `json:"uid,omitempty"`     // The user ID or account (used for RTC, RTM, and some chat tokens)
+	ExpirationSeconds int    `json:"expire,omitempty"`  // The token expiration time in seconds (used for all token types)
 }
 
 // NewTokenService returns a TokenService pointer with all configurations set.
@@ -73,4 +87,34 @@ func (s *TokenService) RegisterRoutes(r *gin.Engine) {
 	api.Use(s.middleware.NoCache())
 	api.Use(s.middleware.CORSMiddleware())
 	api.POST("/getNew", s.GetToken)
+}
+
+// GetToken is a helper function that acts as a proxy to the HandleGetToken method.
+// It forwards the HTTP response writer and request from the provided *gin.Context
+// to the HandleGetToken method for token generation and response sending.
+//
+// Parameters:
+//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//
+// Behavior:
+//   - Forwards the HTTP response writer and request to the HandleGetToken method.
+//
+// Notes:
+//   - This function acts as an intermediary to invoke the HandleGetToken method.
+//   - It handles validating the request before sending invoking token generation and response writer through a common function.
+//
+// Example usage:
+//
+//	router.POST("/getNew", TokenService.GetToken)
+func (s *TokenService) GetToken(c *gin.Context) {
+	var req = c.Request
+	var respWriter = c.Writer
+	var tokenReq TokenRequest
+	// Parse the request body into a TokenRequest struct
+	err := json.NewDecoder(req.Body).Decode(&tokenReq)
+	if err != nil {
+		http.Error(respWriter, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.HandleGetToken(tokenReq, respWriter)
 }
