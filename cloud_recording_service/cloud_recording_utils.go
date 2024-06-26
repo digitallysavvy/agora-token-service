@@ -1,23 +1,26 @@
 package cloud_recording_service
 
-// makeRequest is a helper function to make HTTP requests with basic authentication.
-//
-// Parameters:
-//   - method: string - The HTTP method to use for the request (e.g., "GET", "POST").
-//   - url: string - The URL to send the request to.
-//   - auth: string - The base64-encoded authorization header value.
-//   - body: []byte - The request body to send (can be nil for GET requests).
-//
-// Returns:
-//   - []byte: The response body from the server.
-//   - error: An error if there are any issues during the request.
-//
-// Behavior:
-//   - Creates a new HTTP request with the specified method, URL, and body.
-//   - Sets the Authorization and Content-Type headers.
-//   - Sends the request using an HTTP client.
-//   - Reads and returns the response body, or an error if the request fails.
-func makeRequest(method, url, auth string, body []byte) ([]byte, error) {
+import (
+	"math/rand"
+	"strconv"
+)
 
-	return nil, nil
+// generateUID is a helper function to generate unique user id.
+func generateUID() string {
+	// Generate a random number between 1 and 2^32 - 1 (4294967295)
+	// - starts from 1 to avoid 0, which is reserved.
+	uid := rand.Intn(4294967294) + 1
+
+	// Convert the integer to a string
+	return strconv.Itoa(uid)
+}
+
+// Contains checks if a string is present in a slice.
+func Contains(list []string, item string) bool {
+	for _, a := range list {
+		if a == item {
+			return true
+		}
+	}
+	return false
 }
