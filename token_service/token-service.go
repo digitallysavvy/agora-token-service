@@ -71,8 +71,6 @@ func NewTokenService(appIDEnv string, appCertEnv string, corsAllowOrigin string)
 //   - This function organizes the API routes and ensures that requests are handled with appropriate middleware.
 func (s *TokenService) RegisterRoutes(r *gin.Engine) {
 	api := r.Group("/token")
-	api.Use(s.middleware.NoCache())
-	api.Use(s.middleware.CORSMiddleware())
 	api.POST("/getNew", s.GetToken)
 }
 
