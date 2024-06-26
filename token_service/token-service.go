@@ -2,13 +2,11 @@ package token_service
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/AgoraIO-Community/agora-backend-service/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 // TokenService represents the main application token service.
@@ -48,18 +46,7 @@ type TokenRequest struct {
 //
 // Notes:
 //   - Logs a fatal error and exits if any required environment variables are missing.
-func NewTokenService() *TokenService {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
-	appIDEnv, appIDExists := os.LookupEnv("APP_ID")
-	appCertEnv, appCertExists := os.LookupEnv("APP_CERTIFICATE")
-	corsAllowOrigin, _ := os.LookupEnv("CORS_ALLOW_ORIGIN")
-
-	if !appIDExists || !appCertExists || len(appIDEnv) == 0 || len(appCertEnv) == 0 {
-		log.Fatal("FATAL ERROR: ENV not properly configured, check .env file or APP_ID and APP_CERTIFICATE")
-	}
+func NewTokenService(appIDEnv string, appCertEnv string, corsAllowOrigin string) *TokenService {
 
 	return &TokenService{
 		appID:          appIDEnv,

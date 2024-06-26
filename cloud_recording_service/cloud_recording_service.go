@@ -2,29 +2,22 @@ package cloud_recording_service
 
 import (
 	"encoding/json"
-	"log"
+	"math/rand"
 	"net/http"
-	"os"
-	"strconv"
+	"time"
 
-	"github.com/AgoraIO-Community/agora-backend-service/middleware"
 	"github.com/AgoraIO-Community/agora-backend-service/token_service"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 // CloudRecordingService represents the cloud recording service.
 // It holds the necessary configurations and dependencies for managing cloud recordings.
 type CloudRecordingService struct {
-	appID               string                      // The Agora app ID
-	appCertificate      string                      // The Agora app certificate
-	customerID          string                      // The customer ID for authentication
-	customerCertificate string                      // The customer certificate for authentication
-	allowOrigin         string                      // The allowed origin for CORS
-	middleware          *middleware.Middleware      // Middleware for handling requests
-	tokenService        *token_service.TokenService // Token service for generating tokens
-	baseURL             string                      // The base URL for the Agora cloud recording API
-	storageConfig       StorageConfig
+	appID         string                      // The Agora app ID
+	baseURL       string                      // The base URL for the Agora cloud recording API
+	basicAuth     string                      // Middleware for handling requests
+	tokenService  *token_service.TokenService // Token service for generating tokens
+	storageConfig StorageConfig
 }
 
 // NewCloudRecordingService returns a CloudRecordingService pointer with all configurations set.
@@ -37,60 +30,22 @@ type CloudRecordingService struct {
 //   - *CloudRecordingService: The initialized CloudRecordingService struct.
 //
 // Behavior:
-//   - Loads environment variables from the .env file.
-//   - Retrieves and validates necessary environment variables.
-//   - Initializes and returns a CloudRecordingService struct with the loaded configurations.
+//   - Initializes and returns a CloudRecordingService struct with the given configurations.
 //
 // Notes:
 //   - Logs a fatal error and exits if any required environment variables are missing.
-func NewCloudRecordingService(tokenService *token_service.TokenService) *CloudRecordingService {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
-	appIDEnv, appIDExists := os.LookupEnv("APP_ID")
-	appCertEnv, appCertExists := os.LookupEnv("APP_CERTIFICATE")
-	customerIDEnv, customerIDExists := os.LookupEnv("CUSTOMER_ID")
-	customerCertEnv, customerCertExists := os.LookupEnv("CUSTOMER_CERTIFICATE")
-	corsAllowOrigin, _ := os.LookupEnv("CORS_ALLOW_ORIGIN")
-	baseURLEnv, baseURLExists := os.LookupEnv("BASE_URL")
+func NewCloudRecordingService(appID string, baseURL string, basicAuth string, tokenService *token_service.TokenService, storageConfig StorageConfig) *CloudRecordingService {
 
-	secretKey, secretKeyExists := os.LookupEnv("STORAGE_SECRET_KEY")
-	vendorStr, vendorExists := os.LookupEnv("STORAGE_VENDOR")
-	regionStr, regionExists := os.LookupEnv("STORAGE_REGION")
-	bucket, bucketExists := os.LookupEnv("STORAGE_BUCKET")
-	accessKey, accessKeyExists := os.LookupEnv("STORAGE_ACCESS_KEY")
+	// Seed the random number generator with the current time
+	rand.Seed(time.Now().UnixNano())
 
-	if !appIDExists || !appCertExists || !customerIDExists || !customerCertExists || !baseURLExists ||
-	!secretKeyExists || !vendorExists || !regionExists || !bucketExists || !accessKeyExists {
-		log.Fatal("FATAL ERROR: ENV not properly configured, check .env file for all required variables")
-	}
-
-	vendor, err := strconv.Atoi(vendorStr)
-	if err != nil {
-		log.Fatal("FATAL ERROR: Invalid STORAGE_VENDOR value")
-	}
-	region, err := strconv.Atoi(regionStr)
-	if err != nil {
-		log.Fatal("FATAL ERROR: Invalid STORAGE_REGION value")
-	}
-
+	// Return a new instance of the service
 	return &CloudRecordingService{
-		appID:               appIDEnv,
-		appCertificate:      appCertEnv,
-		customerID:          customerIDEnv,
-		customerCertificate: customerCertEnv,
-		allowOrigin:         corsAllowOrigin,
-		middleware:          middleware.NewMiddleware(corsAllowOrigin),
-		tokenService:        tokenService,
-		baseURL:             baseURLEnv,
-		storageConfig: StorageConfig{
-			SecretKey:  secretKey,
-			Vendor:     vendor,
-			Region:     region,
-			Bucket:     bucket,
-			AccessKey:  accessKey,
-		},
+		appID:         appID,
+		baseURL:       baseURL,
+		basicAuth:     basicAuth,
+		tokenService:  tokenService,
+		storageConfig: storageConfig,
 	}
 }
 
@@ -108,47 +63,88 @@ func NewCloudRecordingService(tokenService *token_service.TokenService) *CloudRe
 // Notes:
 //   - This function organizes the API routes and ensures that requests are handled with appropriate middleware.
 func (s *CloudRecordingService) RegisterRoutes(r *gin.Engine) {
-	// set group route
+	// group route
 	api := r.Group("/cloud_recording")
-	// use middleware headers
-	api.Use(s.middleware.NoCache())
-	api.Use(s.middleware.CORSMiddleware())
-	// routes to functions
-	// api.POST("/acquireResource", s.AcquireResource)
+	// routes
 	api.POST("/startRecording", s.StartRecording)
 	api.POST("/stopRecording", s.StopRecording)
 	api.GET("/getStatus", s.GetStatus)
-	// set "update" group route
+	// "update" group route
 	updateAPI := api.Group("/update")
 	updateAPI.POST("/subscriber-list", s.UpdateSubscriptionList)
 	updateAPI.POST("/layout", s.UpdateLayout)
 }
 
-func (s *CloudRecordingService) AcquireResource(c *gin.Context) {
-	var req = c.Request
-	var respWriter = c.Writer
-	var aquaireReq AcquireResourceRequest
-	err := json.NewDecoder(req.Body).Decode(&aquaireReq)
-	if err != nil {
-		// invalid request
-		http.Error(respWriter, err.Error(), http.StatusBadRequest)
-		return
-	}
-	s.HandleAcquireResource(aquaireReq, c.Writer)
-}
-
-
 func (s *CloudRecordingService) StartRecording(c *gin.Context) {
-	var req = c.Request
-	var respWriter = c.Writer
-	var startReq StartRecordingRequest
-	err := json.NewDecoder(req.Body).Decode(&startReq)
-	if err != nil {
-		// invalid request
-		http.Error(respWriter, err.Error(), http.StatusBadRequest)
+
+	var clientReq ClientStartRecordingRequest
+	if err := c.ShouldBindJSON(&clientReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	s.HandleStartRecording(startReq, respWriter)
+
+	// Validate recording mode
+	modes := []string{"individual", "mix", "web"}
+	if !Contains(modes, clientReq.RecordingMode) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid recording mode."})
+		return
+	}
+
+	// Generate a unique UID for this recording session
+	uid := generateUID()
+
+	// Acquire Resource
+	acquireReq := AcquireResourceRequest{
+		Cname:         clientReq.ChannelName,
+		Uid:           uid,
+		ClientRequest: make(map[string]interface{}), // Initialize as an empty map
+	}
+	resourceID, err := s.HandleAcquireResourceReq(acquireReq)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to acquire resource: " + err.Error()})
+		return
+	}
+
+	// Generate token for recording using token_service
+	tokenRequest := token_service.TokenRequest{
+		TokenType: "rtc",
+		Channel:   clientReq.ChannelName,
+		Uid:       uid,
+	}
+	token, err := s.tokenService.GenRtcToken(tokenRequest)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Build the full StartRecordingRequest
+	startReq := StartRecordingRequest{
+		Cname: clientReq.ChannelName,
+		Uid:   uid,
+		ClientRequest: ClientRequest{
+			Scene:               1,  // Assuming default scene, adjust as needed
+			ResourceExpiredHour: 24, // Assuming 24 hours, adjust as needed
+			StartParameter: StartParameter{
+				Token:           token,
+				StorageConfig:   s.storageConfig,
+				RecordingConfig: clientReq.RecordingConfig,
+			},
+		},
+	}
+
+	// Step 3: Start Recording
+	recordingID, err := s.HandleStartRecordingReq(startReq, resourceID, clientReq.RecordingMode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start recording: " + err.Error()})
+		return
+	}
+
+	// Step 4: Return Resource ID and Recording ID
+	c.JSON(http.StatusOK, gin.H{
+		"UID":         uid,
+		"resourceId":  resourceID,
+		"recordingId": recordingID,
+	})
 }
 
 // StopRecording
