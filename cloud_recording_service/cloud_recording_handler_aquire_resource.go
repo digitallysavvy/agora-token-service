@@ -1,23 +1,45 @@
 package cloud_recording_service
 
 import (
-	"net/http"
+	"encoding/json"
+	"fmt"
 )
 
-// HandleAcquireResource handles the acquire resource request.
-// It validates the request, constructs the URL, and sends the request to the Agora cloud recording API.
+// HandleAcquireResourceReq handles the acquire resource request.
+// It constructs the URL, marshals the request, sends it to the Agora cloud recording API, and processes the response.
 //
 // Parameters:
-//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//   - acquireReq: AcquireResourceRequest - The request payload for acquiring a resource.
+//
+// Returns:
+//   - string: The resource ID acquired from the Agora cloud recording API.
+//   - error: An error object if any issues occurred during the request process.
 //
 // Behavior:
-//   - Parses the request body into an AcquireResourceRequest struct.
-//   - Validates the request fields.
-//   - Constructs the URL and authentication header for the API request.
-//   - Sends the request to the Agora cloud recording API and returns the response.
+//   - Marshals the acquireReq struct into JSON.
+//   - Constructs the URL for the Agora cloud recording API request.
+//   - Sends the Acquire request to the Agora cloud recording API using makeRequest.
+//   - Reads and processes the response body to extract the resource ID if the request is successful.
 //
 // Notes:
 //   - This function assumes the presence of s.baseURL, s.appID, s.customerID, and s.customerCertificate for constructing the API request.
-func (s *CloudRecordingService) HandleAcquireResource(aquaireReq AcquireResourceRequest, w http.ResponseWriter) {
+func (s *CloudRecordingService) HandleAcquireResourceReq(acquireReq AcquireResourceRequest) (string, error) {
+	// Construct the URL
+	url := fmt.Sprintf("%s/%s/cloud_recording/acquire", s.baseURL, s.appID)
 
+	body, err := s.makeRequest("POST", url, acquireReq)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse the response body to extract the resource ID
+	var response struct {
+		ResourceId string `json:"resourceId"`
+	}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", fmt.Errorf("error parsing response: %v", err)
+	}
+
+	return response.ResourceId, nil
 }

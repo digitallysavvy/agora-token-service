@@ -1,24 +1,39 @@
 package cloud_recording_service
 
 import (
-	"net/http"
+	"encoding/json"
+	"fmt"
 )
 
-// StartRecording handles the start recording request.
-// It validates the request, generates a token, constructs the URL, and sends the request to the Agora cloud recording API.
+// HandleStartRecordingReq handles the start recording request.
+// It uses the makeRequest function to send the request to the Agora cloud recording API.
 //
 // Parameters:
-//   - c: *gin.Context - The Gin context representing the HTTP request and response.
+//   - startReq: StartRecordingRequest - The request payload for starting a recording.
+//   - resourceId: string - The resource ID acquired previously.
+//   - modeType: string - The recording mode type.
 //
-// Behavior:
-//   - Parses the request body into a StartRecordingRequest struct.
-//   - Validates the request fields.
-//   - Generates a token using the token_service.
-//   - Constructs the URL and authentication header for the API request.
-//   - Sends the request to the Agora cloud recording API and returns the response.
-//
-// Notes:
-//   - This function assumes the presence of s.baseURL, s.appID, s.customerID, s.customerCertificate, and s.tokenService for constructing the API request and generating the token.
-func (s *CloudRecordingService) HandleStartRecording(startReq StartRecordingRequest, w http.ResponseWriter) {
+// Returns:
+//   - string: The recording ID (sid) acquired from the Agora cloud recording API.
+//   - error: An error object if any issues occurred during the request process.
+func (s *CloudRecordingService) HandleStartRecordingReq(startReq StartRecordingRequest, resourceId string, modeType string) (string, error) {
+	url := fmt.Sprintf("%s/%s/cloud_recording/resourceid/%s/mode/%s/start", s.baseURL, s.appID, resourceId, modeType)
+	body, err := s.makeRequest("POST", url, startReq)
+	if err != nil {
+		return "", err
+	}
 
+	// Parse the response body to extract the necessary information
+	var response struct {
+		Cname      string `json:"cname"`
+		Uid        string `json:"uid"`
+		ResourceId string `json:"resourceId"`
+		Sid        string `json:"sid"`
+	}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return "", fmt.Errorf("error parsing response: %v", err)
+	}
+
+	return response.Sid, nil
 }
