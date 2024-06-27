@@ -1,5 +1,7 @@
 package cloud_recording_service
 
+import "encoding/json"
+
 // ClientStartRecordingRequest represents the JSON payload structure sent by the client to start a cloud recording.
 type ClientStartRecordingRequest struct {
 	ChannelName        string           `json:"channelName"`
@@ -9,12 +11,21 @@ type ClientStartRecordingRequest struct {
 	RecordingConfig    *RecordingConfig `json:"recordingConfig,omitempty"`
 }
 
+type ClientStopRecordingRequest struct {
+	Cname         string  `json:"cname"` // The channel name for the cloud recording
+	Uid           string  `json:"uid"`   // The UID for the cloud recording session
+	ResourceId    string  `json:"resourceId"`
+	RecordingId   string  `json:"recordingId"`
+	RecordingMode *string `json:"recordingMode,omitempty"`
+	AsyncStop     *bool   `json:"async_stop,omitempty"`
+}
+
 // AcquireResourceRequest represents the JSON payload structure for acquiring a cloud recording resource.
 // It contains the channel name and UID necessary for resource acquisition.
 type AcquireResourceRequest struct {
-	Cname          string               `json:"cname"`         // The channel name for the cloud recording
-	Uid            string               `json:"uid"`           // The UID for the cloud recording session
-	StartParameter *AquireClientRequest `json:"clientRequest"` // The client request, an empty object
+	Cname         string               `json:"cname"`         // The channel name for the cloud recording
+	Uid           string               `json:"uid"`           // The UID for the cloud recording session
+	ClientRequest *AquireClientRequest `json:"clientRequest"` // The client request, an empty object
 }
 
 // StartRecordingRequest represents the JSON payload structure for starting a cloud recording.
@@ -25,12 +36,79 @@ type StartRecordingRequest struct {
 	ClientRequest ClientRequest `json:"clientRequest"` // The client request configuration for the cloud recording
 }
 
+type StopRecordingRequest struct {
+	Cname         string            `json:"cname"` // The channel name for the cloud recording
+	Uid           string            `json:"uid"`   // The UID for the cloud recording session
+	ResourceId    string            `json:"resourceId"`
+	ClientRequest StopClientRequest `json:"clientRequest"` // The client request to stop the cloud recording
+}
+
+type StopClientRequest struct {
+	AsyncStop *bool `json:"async_stop,omitempty"`
+}
+
 // AquireClientRequest represents the client request configuration for starting a cloud recording.
 type AquireClientRequest struct {
 	Scene               int           `json:"scene,omitempty"`
 	ResourceExpiredHour int           `json:"resourceExpiredHour,omitempty"`
 	StartParameter      ClientRequest `json:"startParameter,omitempty"`
 	ExcludeResourceIds  *[]string     `json:"excludeResourceIds,omitempty"`
+}
+
+// Server Response from Agora after successful Start
+type StartRecordingResponse struct {
+	Cname      string `json:"cname"`
+	Uid        string `json:"uid"`
+	ResourceId string `json:"resourceId"`
+	Sid        string `json:"sid"`
+}
+
+// StopRecordingResponse main struct for the recording response
+type StopRecordingResponse struct {
+	ResourceId     *string        `json:"resourceId"`
+	Sid            *string        `json:"sid"`
+	ServerResponse ServerResponse `json:"serverResponse,omitempty"` // Use RawMessage to defer unmarshaling
+	Cname          *string        `json:"cname"`
+	Uid            *string        `json:"uid"`
+}
+
+// ServerResponse all responsese
+type ServerResponse struct {
+	ExtensionServiceState   *ExtensionServiceState `json:"extensionServiceState,omitempty"`
+	UploadingStatusResponse *string                `json:"uploadingStatus,omitempty"`
+	FileListMode            *string                `json:"fileListMode,omitempty"` // values: string or json
+	FileList                *json.RawMessage       `json:"fileList,omitempty"`     // []FileDetail | []FileListEntry
+}
+
+// ServerResponse: Web page recording (scenario 1)
+type ExtensionServiceState struct {
+	PlayloadStop *PlayloadStop `json:"playload"`
+	ServiceName  string        `json:"serviceName"`
+}
+
+type PlayloadStop struct {
+	UploadingStatus *string       `json:"uploadingStatus,omitempty"`
+	FileList        *[]FileDetail `json:"fileList,omitempty"`
+	OnHold          *bool         `json:"onhold"`
+	State           *string       `json:"state"`
+}
+
+// Use as part of two ServerResponses
+// - Web page recording (part of Playload)
+// - []FileDetail (individual recording)
+type FileDetail struct {
+	Filename       string `json:"filename"`
+	SliceStartTime int64  `json:"sliceStartTime"`
+}
+
+// []FileListEntry for handling fileList-json
+type FileListEntry struct {
+	FileName       string `json:"fileName"`
+	TrackType      string `json:"trackType"`
+	Uid            string `json:"uid"`
+	MixedAllUser   bool   `json:"mixedAllUser"`
+	IsPlayable     bool   `json:"isPlayable"`
+	SliceStartTime int64  `json:"sliceStartTime"`
 }
 
 // ClientRequestcontains the detailed parameters for starting or updating a recording.
