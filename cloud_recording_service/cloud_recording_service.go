@@ -77,38 +77,40 @@ func (s *CloudRecordingService) RegisterRoutes(r *gin.Engine) {
 
 func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 
-	var clientReq ClientStartRecordingRequest
-	if err := c.ShouldBindJSON(&clientReq); err != nil {
+	var clientStartReq ClientStartRecordingRequest
+	if err := c.ShouldBindJSON(&clientStartReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Validate recording mode
-	modes := []string{"individual", "mix", "web"}
-	if !Contains(modes, clientReq.RecordingMode) {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid recording mode."})
+	sceneMode := 0
+	sceneModes := map[string]int{"realtime": 0, "web": 1, "postponed": 2}
+	if clientStartReq.SceneMode != nil {
+		if mode, ok := sceneModes[*clientStartReq.SceneMode]; ok {
+			sceneMode = mode
+		}
+	}
+
+	// Default RecordingMode to "composite" if nil
+	recordingMode := "mix"
+	if clientStartReq.RecordingMode != nil {
+		recordingMode = *clientStartReq.RecordingMode
+	}
+
+	// Validate recording mode against a set list
+	validRecordingModes := []string{"individual", "mix", "web"}
+	if !Contains(validRecordingModes, recordingMode) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid recording mode."})
 		return
 	}
 
 	// Generate a unique UID for this recording session
 	uid := generateUID()
 
-	// Acquire Resource
-	acquireReq := AcquireResourceRequest{
-		Cname:         clientReq.ChannelName,
-		Uid:           uid,
-		ClientRequest: make(map[string]interface{}), // Initialize as an empty map
-	}
-	resourceID, err := s.HandleAcquireResourceReq(acquireReq)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to acquire resource: " + err.Error()})
-		return
-	}
-
 	// Generate token for recording using token_service
 	tokenRequest := token_service.TokenRequest{
 		TokenType: "rtc",
-		Channel:   clientReq.ChannelName,
+		Channel:   clientStartReq.ChannelName,
 		Uid:       uid,
 	}
 	token, err := s.tokenService.GenRtcToken(tokenRequest)
@@ -117,29 +119,79 @@ func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 		return
 	}
 
+	// Add dynamic directory structure ChannelName/YYYY-MM-DD/HH-MM-SS
+	currentTimeUTC := time.Now().UTC()
+	dateStr := currentTimeUTC.Format("2006-01-02")
+	hrsMinSecStr := currentTimeUTC.Format("15-04-05")
+	s.storageConfig.FileNamePrefix = &[]string{clientStartReq.ChannelName, dateStr, hrsMinSecStr}
+
+	// Check if RecordingConfig is nil, if so, create a default one
+	if clientStartReq.RecordingConfig == nil {
+		// recording config defaults
+		channelType := 0
+		streamTypes := 2
+		videoStreamType := 0
+		maxIdleTime := 120
+		subscribeUidGroup := 0
+		streamMode := "standard" // Default to "standard", ensure to modify based on your actual logic
+		subscribeAudioUids := []string{"#allstream#"}
+		subscribeVideoUids := []string{"#allstream#"}
+		// create default recording config
+		clientStartReq.RecordingConfig = &RecordingConfig{
+			ChannelType:        channelType,
+			StreamTypes:        &streamTypes,
+			VideoStreamType:    &videoStreamType,
+			StreamMode:         &streamMode,
+			MaxIdleTime:        &maxIdleTime,
+			SubscribeAudioUids: &subscribeAudioUids,
+			SubscribeVideoUids: &subscribeVideoUids,
+			SubscribeUidGroup:  &subscribeUidGroup,
+		}
+	}
+
+	// Assemble recording client request
+	recClientReq := AquireClientRequest{
+		Scene:               sceneMode,
+		ResourceExpiredHour: 24, // Assuming 24 hours, adjust as needed
+		StartParameter: ClientRequest{
+			Token:           token,
+			StorageConfig:   s.storageConfig,
+			RecordingConfig: *clientStartReq.RecordingConfig,
+		},
+		ExcludeResourceIds: clientStartReq.ExcludeResourceIds,
+	}
+
+	// Acquire Resource
+	acquireReq := AcquireResourceRequest{
+		Cname:         clientStartReq.ChannelName,
+		Uid:           uid,
+		ClientRequest: &recClientReq, // Initialize as an empty map
+	}
+	resourceID, err := s.HandleAcquireResourceReq(acquireReq)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to acquire resource: " + err.Error()})
+		return
+	}
+
 	// Build the full StartRecordingRequest
 	startReq := StartRecordingRequest{
-		Cname: clientReq.ChannelName,
+		Cname: clientStartReq.ChannelName,
 		Uid:   uid,
 		ClientRequest: ClientRequest{
-			Scene:               1,  // Assuming default scene, adjust as needed
-			ResourceExpiredHour: 24, // Assuming 24 hours, adjust as needed
-			StartParameter: StartParameter{
-				Token:           token,
-				StorageConfig:   s.storageConfig,
-				RecordingConfig: clientReq.RecordingConfig,
-			},
+			Token:           token,
+			StorageConfig:   s.storageConfig,
+			RecordingConfig: *clientStartReq.RecordingConfig,
 		},
 	}
 
-	// Step 3: Start Recording
-	recordingID, err := s.HandleStartRecordingReq(startReq, resourceID, clientReq.RecordingMode)
+	// Start Recording
+	recordingID, err := s.HandleStartRecordingReq(startReq, resourceID, recordingMode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start recording: " + err.Error()})
 		return
 	}
 
-	// Step 4: Return Resource ID and Recording ID
+	// Return Resource ID and Recording ID
 	c.JSON(http.StatusOK, gin.H{
 		"UID":         uid,
 		"resourceId":  resourceID,
@@ -151,14 +203,35 @@ func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 func (s *CloudRecordingService) StopRecording(c *gin.Context) {
 	var req = c.Request
 	var respWriter = c.Writer
-	var stopReq StartRecordingRequest
-	err := json.NewDecoder(req.Body).Decode(&stopReq)
+	var clientStopReq ClientStopRecordingRequest
+	err := json.NewDecoder(req.Body).Decode(&clientStopReq)
 	if err != nil {
 		// invalid request
 		http.Error(respWriter, err.Error(), http.StatusBadRequest)
 		return
 	}
-	s.HandleStopRecording(stopReq, respWriter)
+
+	// build the stop request from user request
+	stopReq := StopRecordingRequest{
+		Cname: clientStopReq.Cname,
+		Uid:   clientStopReq.Uid,
+		ClientRequest: StopClientRequest{
+			AsyncStop: clientStopReq.AsyncStop,
+		},
+	}
+	recordingMode := "mix"
+	if clientStopReq.RecordingMode != nil {
+		recordingMode = *clientStopReq.RecordingMode
+	}
+	// Send Stop Recording Request to Agora
+	response, err := s.HandleStopRecording(stopReq, clientStopReq.ResourceId, clientStopReq.RecordingId, recordingMode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return Agora Response
+	c.Data(http.StatusOK, "application/json", response)
 }
 
 // GetStatus
