@@ -3,6 +3,7 @@ package cloud_recording_service
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // HandleStopRecording processes the request to stop a cloud recording session in Agora's cloud recording service.
@@ -21,7 +22,7 @@ import (
 // Notes:
 //   - It is critical to ensure that all identifiers and request parameters are valid and not nil.
 //   - This function uses s.baseURL, s.appID, s.customerID, and s.customerCertificate to construct the API request.
-func (s *CloudRecordingService) HandleStopRecording(stopReq StopRecordingRequest, resourceId string, recordingId string, modeType string) ([]byte, error) {
+func (s *CloudRecordingService) HandleStopRecording(stopReq StopRecordingRequest, resourceId string, recordingId string, modeType string) (json.RawMessage, error) {
 	// build stop recording endpoint
 	url := fmt.Sprintf("%s/%s/cloud_recording/resourceid/%s/sid/%s/mode/%s/stop", s.baseURL, s.appID, resourceId, recordingId, modeType)
 
@@ -38,13 +39,19 @@ func (s *CloudRecordingService) HandleStopRecording(stopReq StopRecordingRequest
 		return []byte{}, fmt.Errorf("error parsing response body into StopRecordingResponse: %v", err)
 	}
 
-	// Validate the FileList conforms to the expected strcutrue based on FileListMode.
+	// Validate the FileList conforms to the expected structure based on FileListMode.
 	_, err = response.ServerResponse.UnmarshalFileList()
 	if err != nil {
 		return nil, fmt.Errorf("error parsing ServerResponse: %v", err)
 	}
 
-	return body, nil
+	// Add timestamp to Agora response
+	timestampBody, err := s.AddTimestamp(response)
+	if err != nil {
+		return nil, fmt.Errorf("error encoding timestamped response: %v", err)
+	}
+
+	return timestampBody, nil
 }
 
 // UnmarshalFileList interprets the file list from the server response based on the specified FileListMode.
@@ -78,4 +85,17 @@ func (sr *ServerResponse) UnmarshalFileList() (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("unknown FileListMode: %s", *sr.FileListMode)
 	}
+}
+
+func (s *CloudRecordingService) AddTimestamp(response StopRecordingResponse) (json.RawMessage, error) {
+	// Set the current timestamp
+	now := time.Now().UTC().Format(time.RFC3339)
+	response.Timestamp = &now
+
+	// Marshal the response back to JSON
+	timestampedBody, err := json.Marshal(response)
+	if err != nil {
+		return []byte{}, fmt.Errorf("error marshaling final response: %v", err)
+	}
+	return timestampedBody, nil
 }
