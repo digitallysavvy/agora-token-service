@@ -67,6 +67,7 @@ func main() {
 	var middleware = middleware.NewMiddleware(corsAllowOrigin)
 	r.Use(middleware.NoCache())
 	r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.TimestampMiddleware())
 
 	// Create instances of your services
 	tokenService := token_service.NewTokenService(appIDEnv, appCertEnv, corsAllowOrigin)
