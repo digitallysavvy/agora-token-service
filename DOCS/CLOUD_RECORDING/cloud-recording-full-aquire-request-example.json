@@ -1,0 +1,114 @@
+{
+  "cname": "string",
+  "uid": "string",
+  "clientRequest": {
+    "scene": 0,
+    "resourceExpiredHour": 72,
+    "startParameter": {
+      "token": "string",
+      "storageConfig": {
+        "vendor": 0,
+        "region": 0,
+        "bucket": "string",
+        "accessKey": "string",
+        "secretKey": "string",
+        "fileNamePrefix": ["string"],
+        "extensionParams": {
+          "sse": "string",
+          "tag": "string"
+        }
+      },
+      "recordingConfig": {
+        "channelType": 0,
+        "decryptionMode": 0,
+        "secret": "string",
+        "salt": "string",
+        "maxIdleTime": 30,
+        "streamTypes": 2,
+        "videoStreamType": 0,
+        "subscribeAudioUids": ["string"],
+        "unsubscribeAudioUids": ["string"],
+        "subscribeVideoUids": ["string"],
+        "unsubscribeVideoUids": ["string"],
+        "subscribeUidGroup": 0,
+        "streamMode": "default",
+        "audioProfile": 0,
+        "transcodingConfig": {
+          "width": 360,
+          "height": 640,
+          "fps": 15,
+          "bitrate": 500,
+          "maxResolutionUid": "string",
+          "mixedVideoLayout": 0,
+          "backgroundColor": "#000000",
+          "backgroundImage": "string",
+          "defaultUserBackgroundImage": "string",
+          "layoutConfig": [
+            {
+              "uid": "string",
+              "x_axis": 1,
+              "y_axis": 1,
+              "width": 1,
+              "height": 1,
+              "alpha": 1,
+              "render_mode": 0
+            }
+          ],
+          "backgroundConfig": [
+            {
+              "uid": "string",
+              "image_url": "string",
+              "render_mode": 0
+            }
+          ]
+        }
+      },
+      "recordingFileConfig": {
+        "avFileType": ["hls"]
+      },
+      "snapshotConfig": {
+        "captureInterval": 10,
+        "fileType": ["jpg"]
+      },
+      "extensionServiceConfig": {
+        "errorHandlePolicy": "error_abort",
+        "extensionServices": [
+          {
+            "serviceName": "string",
+            "errorHandlePolicy": "string",
+            "serviceParam": {
+              "url": "string",
+              "audioProfile": 0,
+              "videoWidth": 240,
+              "videoHeight": 240,
+              "maxRecordingHour": 1,
+              "videoBitrate": 0,
+              "videoFps": 15,
+              "mobile": false,
+              "maxVideoDuration": 120,
+              "onhold": false,
+              "readyTimeout": 0
+            }
+          }
+        ]
+      },
+      "appsCollection": {
+        "combinationPolicy": "default"
+      },
+      "transcodeOptions": {
+        "transConfig": {
+          "transMode": "string"
+        },
+        "container": {
+          "format": "string"
+        },
+        "audio": {
+          "sampleRate": "48000",
+          "bitrate": "48000",
+          "channels": "2"
+        }
+      }
+    },
+    "excludeResourceIds": ["string"]
+  }
+}

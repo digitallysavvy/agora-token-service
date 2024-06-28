@@ -11,42 +11,7 @@ import (
 	"github.com/AgoraIO-Community/go-tokenbuilder/chatTokenBuilder"
 	rtctokenbuilder2 "github.com/AgoraIO-Community/go-tokenbuilder/rtctokenbuilder"
 	rtmtokenbuilder2 "github.com/AgoraIO-Community/go-tokenbuilder/rtmtokenbuilder"
-	"github.com/gin-gonic/gin"
 )
-
-// TokenRequest is a struct representing the JSON payload structure for token generation requests.
-// It contains fields necessary for generating different types of tokens (RTC, RTM, or chat) based on the "TokenType".
-// The "Channel", "RtcRole", "Uid", and "ExpirationSeconds" fields are used for specific token types.
-//
-// TokenType options: "rtc" for RTC token, "rtm" for RTM token, and "chat" for chat token.
-type TokenRequest struct {
-	TokenType         string `json:"tokenType"`         // The token type: "rtc", "rtm", or "chat"
-	Channel           string `json:"channel,omitempty"` // The channel name (used for RTC and RTM tokens)
-	RtcRole           string `json:"role,omitempty"`    // The role of the user for RTC tokens (publisher or subscriber)
-	Uid               string `json:"uid,omitempty"`     // The user ID or account (used for RTC, RTM, and some chat tokens)
-	ExpirationSeconds int    `json:"expire,omitempty"`  // The token expiration time in seconds (used for all token types)
-}
-
-// GetToken is a helper function that acts as a proxy to the GetToken method.
-// It forwards the HTTP response writer and request from the provided *gin.Context
-// to the GetToken method for token generation and response sending.
-//
-// Parameters:
-//   - c: *gin.Context - The Gin context representing the HTTP request and response.
-//
-// Behavior:
-//   - Forwards the HTTP response writer and request to the GetToken method.
-//
-// Notes:
-//   - This function acts as an intermediary to invoke the GetToken method.
-//   - It allows token generation and response sending through a common proxy function.
-//
-// Example usage:
-//
-//	router.POST("/getNew", TokenService.GetToken)
-func (s *TokenService) GetToken(c *gin.Context) {
-	s.HandleGetToken(c.Writer, c.Request)
-}
 
 // HandleGetToken handles the HTTP request to generate a token based on the provided tokenType.
 // It checks the tokenType from the query parameters and calls the appropriate token generation method.
@@ -71,14 +36,7 @@ func (s *TokenService) GetToken(c *gin.Context) {
 // Example usage:
 //
 //	router.POST("/getNew", TokenService.GetToken)
-func (s *TokenService) HandleGetToken(w http.ResponseWriter, r *http.Request) {
-	var tokenReq TokenRequest
-	// Parse the request body into a TokenRequest struct
-	err := json.NewDecoder(r.Body).Decode(&tokenReq)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+func (s *TokenService) HandleGetToken(tokenReq TokenRequest, w http.ResponseWriter) {
 
 	var token string
 	var tokenErr error

@@ -1,13 +1,12 @@
 package token_service
 
 import (
-	"log"
+	"encoding/json"
 	"net/http"
 	"os"
 
 	"github.com/AgoraIO-Community/agora-backend-service/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 // TokenService represents the main application token service.
@@ -19,6 +18,19 @@ type TokenService struct {
 	appCertificate string                 // The Agora app certificate
 	allowOrigin    string                 // The allowed origin for CORS
 	middleware     *middleware.Middleware // Middleware for handling requests
+}
+
+// TokenRequest is a struct representing the JSON payload structure for token generation requests.
+// It contains fields necessary for generating different types of tokens (RTC, RTM, or chat) based on the "TokenType".
+// The "Channel", "RtcRole", "Uid", and "ExpirationSeconds" fields are used for specific token types.
+//
+// TokenType options: "rtc" for RTC token, "rtm" for RTM token, and "chat" for chat token.
+type TokenRequest struct {
+	TokenType         string `json:"tokenType"`         // The token type: "rtc", "rtm", or "chat"
+	Channel           string `json:"channel,omitempty"` // The channel name (used for RTC and RTM tokens)
+	RtcRole           string `json:"role,omitempty"`    // The role of the user for RTC tokens (publisher or subscriber)
+	Uid               string `json:"uid,omitempty"`     // The user ID or account (used for RTC, RTM, and some chat tokens)
+	ExpirationSeconds int    `json:"expire,omitempty"`  // The token expiration time in seconds (used for all token types)
 }
 
 // NewTokenService returns a TokenService pointer with all configurations set.
@@ -34,18 +46,7 @@ type TokenService struct {
 //
 // Notes:
 //   - Logs a fatal error and exits if any required environment variables are missing.
-func NewTokenService() *TokenService {
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file")
-	}
-	appIDEnv, appIDExists := os.LookupEnv("APP_ID")
-	appCertEnv, appCertExists := os.LookupEnv("APP_CERTIFICATE")
-	corsAllowOrigin, _ := os.LookupEnv("CORS_ALLOW_ORIGIN")
-
-	if !appIDExists || !appCertExists || len(appIDEnv) == 0 || len(appCertEnv) == 0 {
-		log.Fatal("FATAL ERROR: ENV not properly configured, check .env file or APP_ID and APP_CERTIFICATE")
-	}
+func NewTokenService(appIDEnv string, appCertEnv string, corsAllowOrigin string) *TokenService {
 
 	return &TokenService{
 		appID:          appIDEnv,
@@ -70,25 +71,35 @@ func NewTokenService() *TokenService {
 //   - This function organizes the API routes and ensures that requests are handled with appropriate middleware.
 func (s *TokenService) RegisterRoutes(r *gin.Engine) {
 	api := r.Group("/token")
-	api.Use(s.middleware.NoCache())
-	api.Use(s.middleware.CORSMiddleware())
-	api.GET("/ping", s.Ping)
 	api.POST("/getNew", s.GetToken)
 }
 
-// Ping is a simple handler for the /ping route.
-// It responds with a "pong" message to indicate that the service is running.
+// GetToken is a helper function that acts as a proxy to the HandleGetToken method.
+// It forwards the HTTP response writer and request from the provided *gin.Context
+// to the HandleGetToken method for token generation and response sending.
 //
 // Parameters:
 //   - c: *gin.Context - The Gin context representing the HTTP request and response.
 //
 // Behavior:
-//   - Sends a JSON response with a "pong" message.
+//   - Forwards the HTTP response writer and request to the HandleGetToken method.
 //
 // Notes:
-//   - This function is useful for health checks and ensuring that the service is up and running.
-func (s *TokenService) Ping(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "pong",
-	})
+//   - This function acts as an intermediary to invoke the HandleGetToken method.
+//   - It handles validating the request before sending invoking token generation and response writer through a common function.
+//
+// Example usage:
+//
+//	router.POST("/getNew", TokenService.GetToken)
+func (s *TokenService) GetToken(c *gin.Context) {
+	var req = c.Request
+	var respWriter = c.Writer
+	var tokenReq TokenRequest
+	// Parse the request body into a TokenRequest struct
+	err := json.NewDecoder(req.Body).Decode(&tokenReq)
+	if err != nil {
+		http.Error(respWriter, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.HandleGetToken(tokenReq, respWriter)
 }

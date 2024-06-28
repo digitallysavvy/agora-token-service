@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -61,3 +62,53 @@ func (m *Middleware) isOriginAllowed(origin string) bool {
 
 	return false
 }
+
+func (m *Middleware) TimestampMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Proceed to the next middleware/handler
+		c.Next()
+
+		// Add the current timestamp to the response header
+		timestamp := time.Now().Format(time.RFC3339)
+		c.Writer.Header().Set("X-Timestamp", timestamp)
+	}
+}
+
+// TimestampMiddleware adds a timestamp to each response
+// func (m *Middleware) TimestampMiddleware() gin.HandlerFunc {
+// 	return func(c *gin.Context) {
+// 		// Create a custom ResponseWriter to capture the response body
+// 		writer := &ResponseWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
+// 		c.Writer = writer
+
+// 		// Proceed to the next middleware/handler
+// 		c.Next()
+
+// 		// Add the current timestamp to the response header
+// 		timestamp := time.Now().Format(time.RFC3339)
+// 		c.Writer.Header().Set("X-Timestamp", timestamp)
+
+// 		// Add the current timestamp to the response body
+// 		var response map[string]interface{}
+// 		if err := json.Unmarshal(writer.body.Bytes(), &response); err != nil {
+// 			response = make(map[string]interface{})
+// 		}
+// 		response["timestamp"] = timestamp
+
+// 		// Write the modified response body back to the client
+// 		if err := json.NewEncoder(c.Writer).Encode(response); err != nil {
+// 			c.String(500, "Failed to encode response")
+// 		}
+// 	}
+// }
+
+// // ResponseWriter is a custom writer to capture the response body
+// type ResponseWriter struct {
+// 	gin.ResponseWriter
+// 	body *bytes.Buffer
+// }
+
+// func (w ResponseWriter) Write(b []byte) (int, error) {
+// 	w.body.Write(b)
+// 	return w.ResponseWriter.Write(b)
+// }
