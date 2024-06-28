@@ -70,6 +70,7 @@ type StopRecordingResponse struct {
 	ServerResponse ServerResponse `json:"serverResponse,omitempty"` // Use RawMessage to defer unmarshaling
 	Cname          *string        `json:"cname"`
 	Uid            *string        `json:"uid"`
+	Timestamp      *string        `json:"timestamp,omitempty"`
 }
 
 // ServerResponse all responsese
