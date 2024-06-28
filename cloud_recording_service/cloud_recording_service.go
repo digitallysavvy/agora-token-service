@@ -2,8 +2,10 @@ package cloud_recording_service
 
 import (
 	"encoding/json"
+	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/AgoraIO-Community/agora-backend-service/token_service"
@@ -119,11 +121,11 @@ func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 		return
 	}
 
-	// Add dynamic directory structure ChannelName/YYYY-MM-DD/HH-MM-SS
+	// Add dynamic directory structure ChannelName/YYYYMMDD/HHMMSS
 	currentTimeUTC := time.Now().UTC()
-	dateStr := currentTimeUTC.Format("2006-01-02")
-	hrsMinSecStr := currentTimeUTC.Format("15-04-05")
-	s.storageConfig.FileNamePrefix = &[]string{clientStartReq.ChannelName, dateStr, hrsMinSecStr}
+	dateStr := currentTimeUTC.Format("20060102")
+	hrsMinSecStr := currentTimeUTC.Format("150405")
+	s.storageConfig.FileNamePrefix = &[]string{strings.ReplaceAll(clientStartReq.ChannelName, "-", ""), dateStr, hrsMinSecStr}
 
 	// Check if RecordingConfig is nil, if so, create a default one
 	if clientStartReq.RecordingConfig == nil {
@@ -173,6 +175,8 @@ func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 		return
 	}
 
+	log.Println("resourceID:", (resourceID))
+
 	// Build the full StartRecordingRequest
 	startReq := StartRecordingRequest{
 		Cname: clientStartReq.ChannelName,
@@ -183,6 +187,13 @@ func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 			RecordingConfig: *clientStartReq.RecordingConfig,
 		},
 	}
+
+	// configJSON, err := json.MarshalIndent(startReq, "", "  ")
+	// if err != nil {
+	// 	log.Fatalf("Error marshalling default config: %v", err)
+	// }
+	// log.Println("startReq:")
+	// log.Println(string(configJSON))
 
 	// Start Recording
 	recordingID, err := s.HandleStartRecordingReq(startReq, resourceID, recordingMode)
@@ -196,6 +207,7 @@ func (s *CloudRecordingService) StartRecording(c *gin.Context) {
 		"UID":         uid,
 		"resourceId":  resourceID,
 		"recordingId": recordingID,
+		"timestamp":   time.Now().UTC(),
 	})
 }
 
@@ -230,7 +242,7 @@ func (s *CloudRecordingService) StopRecording(c *gin.Context) {
 		return
 	}
 
-	// Return Agora Response
+	// Return the wrapped Agora response
 	c.Data(http.StatusOK, "application/json", response)
 }
 
